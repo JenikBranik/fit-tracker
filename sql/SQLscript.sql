@@ -12,8 +12,7 @@ created_at datetime default current_timestamp
 create table exercises(
 id int primary key auto_increment,
 name varchar(100) not null,
-category enum('Strength', 'Cardio', 'Flexibility') not null,
-description varchar(255)
+category enum('Strength', 'Cardio', 'Flexibility') not null
 );
 
 create table workouts(

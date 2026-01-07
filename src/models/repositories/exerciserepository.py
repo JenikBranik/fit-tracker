@@ -18,14 +18,14 @@ class ExerciseRepository:
         conn = self.db.connect()
         cursor = conn.cursor()
 
-        query = "SELECT id, name, category, description FROM exercises"
+        query = "SELECT id, name, category FROM exercises"
         cursor.execute(query)
         rows = cursor.fetchall()
         cursor.close()
 
         results = []
         for row in rows:
-            results.append(Exercise(row[1], row[2], row[3], row[0]))
+            results.append(Exercise(row[1], row[2]))
 
         return results
 
@@ -39,8 +39,8 @@ class ExerciseRepository:
         conn = self.db.connect()
         cursor = conn.cursor()
 
-        query = "INSERT INTO exercises (name, category, description) VALUES (%s, %s, %s)"
-        cursor.execute(query, (exercise.name, exercise.category, exercise.description))
+        query = "INSERT INTO exercises (name, category) VALUES (%s, %s)"
+        cursor.execute(query, (exercise.name, exercise.category))
         conn.commit()
 
         new_id = cursor.lastrowid

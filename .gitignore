@@ -6,3 +6,6 @@ venv/
 .idea/
 .vscode/
 .cloc-2.04.exe/
+
+config/config.ini
+config.ini

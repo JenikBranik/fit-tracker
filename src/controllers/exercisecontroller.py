@@ -23,8 +23,7 @@ class ExerciseController:
         command = CreateExerciseCommand(
             self.repo,
             data['name'],
-            data['category'],
-            data['description']
+            data['category']
         )
 
         try:
