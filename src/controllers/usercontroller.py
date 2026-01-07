@@ -31,8 +31,8 @@ class UserController:
                 email=data['email']
             )
 
-            user_id = self.invoker.execute_command(command)
-            self.view.show_success(user_id)
+            self.invoker.execute_command(command)
+            self.view.show_success()
             new_user = self.repo.get_by_email(data['email'])
 
             if new_user:

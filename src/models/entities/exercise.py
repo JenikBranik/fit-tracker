@@ -1,17 +1,15 @@
 class Exercise:
     VALID_CATEGORIES = {'Strength', 'Cardio', 'Flexibility'}
-    def __init__(self, name, category, description="", exercise_id=None):
+    def __init__(self, name, category, exercise_id=None):
         """
         Initializes the Exercise entity.
         :param name: Name of the exercise (max 100 chars).
         :param category: One of 'Strength', 'Cardio', 'Flexibility'.
-        :param description: Optional description (max 255 chars).
         :param exercise_id: Database ID.
         """
         self._id = exercise_id
         self.set_name(name)
         self.set_category(category)
-        self.set_description(description)
 
     @property
     def id(self):
@@ -54,24 +52,6 @@ class Exercise:
             raise ValueError(f"Invalid category. Allowed: {self.VALID_CATEGORIES}")
 
         self._category = category
-
-    @property
-    def description(self):
-        return self._description
-
-    def set_description(self, description):
-        """
-        Sets the description.
-        :param description: String, max 255 characters. None is converted to an empty string.
-        :raises ValueError: If the description exceeds the character limit.
-        """
-        if description is None:
-            description = ""
-        if not isinstance(description, str):
-            raise TypeError("Description must be a string.")
-        if len(description) > 255:
-            raise ValueError("Description is too long.")
-        self._description = description.strip()
 
     def __repr__(self):
         return f"<Exercise: {self.name}>"

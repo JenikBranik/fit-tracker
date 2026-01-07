@@ -4,7 +4,7 @@ class ExerciseView:
         Gets input from the user to create a new exercise.
         :return: dict (A dictionary with keys: 'name', 'category', 'description')
         """
-        print("\nADD NEW EXERCISE")
+        print("\nAdd new exercise")
 
         while True:
             name = input("Exercise name: ").strip()
@@ -30,12 +30,9 @@ class ExerciseView:
                 break
             print("Invalid choice, please enter 1, 2, or 3.")
 
-        description = input("Description (optional): ").strip()
-
         return {
             "name": name,
-            "category": selected_category,
-            "description": description
+            "category": selected_category
         }
 
     def show_list(self, exercises):

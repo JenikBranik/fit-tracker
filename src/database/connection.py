@@ -43,6 +43,15 @@ class DbConnection:
             try:
                 db_conf = self._config['database']
 
+                if not db_conf['database']:
+                    raise ValueError("Check the configuration file and fix the database connection.")
+                if not db_conf['port']:
+                    raise ValueError("Check the configuration file and fix the database connection.")
+                if not db_conf['host']:
+                    raise ValueError("Check the configuration file and fix the database connection.")
+                if not db_conf['user']:
+                    raise ValueError("Check the configuration file and fix the database connection.")
+
                 self._conn = mysql.connector.connect(
                     host=db_conf['host'],
                     user=db_conf['user'],
