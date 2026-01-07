@@ -3,11 +3,6 @@ from src.models.entities.exercise import Exercise
 
 class ExerciseRepository:
     def __init__(self, db_connection):
-        """
-        Initializes the repository with a database connection.
-        :param db_connection: Instance of DbConnection
-         used to execute SQL queries.
-        """
         self.db = db_connection
 
     def get_all(self):
@@ -25,17 +20,17 @@ class ExerciseRepository:
 
         results = []
         for row in rows:
-            results.append(Exercise(row[1], row[2]))
+            exercise_obj = Exercise(
+                name=row[1],
+                category=row[2],
+                exercise_id=row[0]
+            )
+
+            results.append(exercise_obj)
 
         return results
 
     def create(self, exercise: Exercise):
-        """
-        Persists a new exercise entity to the database.
-
-        :param exercise: Exercise entity object containing the data to insert.
-        :return: int (The auto-generated ID of the new database row).
-        """
         conn = self.db.connect()
         cursor = conn.cursor()
 

@@ -55,15 +55,16 @@ class WorkoutRepository:
         cursor = conn.cursor()
 
         sql = """
-              INSERT INTO workout_items (workout_id, exercise_id, sets, reps, weight_kg)
-              VALUES (%s, %s, %s, %s, %s) \
+              INSERT INTO workout_items (workout_id, exercise_id, sets, reps, weight_kg, is_warmup)
+              VALUES (%s, %s, %s, %s, %s, %s) \
               """
         vals = (
             workout_id,
             item.exercise_id,
             item.sets,
             item.reps,
-            item.weight_kg
+            item.weight_kg,
+            item.is_warmup
         )
 
         try:
@@ -84,7 +85,7 @@ class WorkoutRepository:
         conn = self.db.connect()
         cursor = conn.cursor()
 
-        sql = "SELECT exercise_id, sets, reps, weight_kg, id FROM workout_items WHERE workout_id = %s"
+        sql = "SELECT exercise_id, sets, reps, weight_kg, is_warmup, id FROM workout_items WHERE workout_id = %s"
 
         try:
             cursor.execute(sql, (workout_id,))
@@ -97,7 +98,8 @@ class WorkoutRepository:
                     sets=row[1],
                     reps=row[2],
                     weight_kg=row[3],
-                    item_id=row[4]
+                    is_warmup=bool(row[4]),
+                    item_id=row[5]
                 )
                 results.append(item)
             return results
@@ -131,23 +133,19 @@ class WorkoutRepository:
 
     def get_items_with_names(self, workout_id):
         """
-        Retrieves workout items enriched with exercise names
-        via a table JOIN.
+        Retrieves workout items enriched with exercise names from a VIEW.
         :param workout_id: ID of the workout.
-        :return: List[dict] (Keys: 'exercise_name', 'sets', 'reps', 'weight').
+        :return: List[dict]
         """
         conn = self.db.connect()
         cursor = conn.cursor()
 
         sql = """
-              SELECT e.name,
-                     wi.sets,
-                     wi.reps,
-                     wi.weight_kg
-              FROM workout_items wi
-                       JOIN exercises e ON wi.exercise_id = e.id
-              WHERE wi.workout_id = %s \
+              SELECT exercise_name, sets, reps, weight_kg, is_warmup
+              FROM workout_details
+              WHERE workout_id = %s
               """
+
         cursor.execute(sql, (workout_id,))
         rows = cursor.fetchall()
         cursor.close()
@@ -158,6 +156,7 @@ class WorkoutRepository:
                 "exercise_name": row[0],
                 "sets": row[1],
                 "reps": row[2],
-                "weight": row[3]
+                "weight": row[3],
+                "is_warmup": bool(row[4])
             })
         return results
