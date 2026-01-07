@@ -1,122 +1,106 @@
 class WorkoutView:
     def get_workout_header_input(self):
         """
-        Získá základní informace pro vytvoření tréninku (hlavičky).
+        Starts a new workout session and asks for a note.
+        :return: str (The note entered by the user).
         """
-        print("\n=== NOVÝ TRÉNINK ===")
-        # Poznámka může být prázdná, takže stačí obyčejný input
-        note = input("Zadejte poznámku k tréninku (např. 'Leg day'): ").strip()
-        return note
-
+        print("\n--- NEW WORKOUT SESSION ---")
+        return input("Note (optional): ").strip()
 
     def get_workout_item_input(self, available_exercises):
         """
-        Získá data pro cvik.
-        Místo zadávání ID uživatel vybírá ze seznamu.
-
-        :param available_exercises: Seznam objektů Exercise načtený z DB
+        Collects details for a specific exercise set.
+        Selection is done by EXERCISE NAME.
         """
-        print("\n--- PŘIDAT CVIK DO TRÉNINKU ---")
+        print("\n--- ADD EXERCISE ---")
 
-        # 1. VÝBĚR CVIKU (Mapování Index -> Objekt)
-        print("Dostupné cviky:")
-        for index, ex in enumerate(available_exercises, 1):
-            # Vypíše např.: "1. Bench Press (Strength)"
-            print(f"{index}. {ex.name} ({ex.category})")
+        # 1. Vytvoříme mapu: "jmeno cviku" -> ID
+        # Příklad: {"honba": 1, "drep": 2}
+        exercises_map = {}
 
-        selected_exercise = None
+        print(f"{'NAME':<20} {'CATEGORY'}")
+        print("-" * 30)
 
+        for ex in available_exercises:
+            print(f"{ex.name:<20} {ex.category}")
+            # Uložíme si název malými písmeny pro snadnější hledání
+            exercises_map[ex.name.strip().lower()] = ex.id
+
+        print("-" * 30)
+
+        # 2. Výběr podle jména
+        exercise_id = None
+        while True:
+            # Zeptáme se na jméno a převedeme na malá písmena
+            name_input = input("Enter Exercise Name: ").strip().lower()
+
+            if name_input in exercises_map:
+                exercise_id = exercises_map[name_input]
+                break
+
+            print("❌ Invalid name. Please type the exact name from the list above.")
+
+        # 3. Zbytek (Série, Opakování, Váha)
         while True:
             try:
-                # Uživatel zadá pořadové číslo (např. 1)
-                user_choice = int(input("Vyberte číslo cviku: "))
-
-                # Ověříme, zda je číslo v rozsahu seznamu
-                if 1 <= user_choice <= len(available_exercises):
-                    # Získáme skutečný objekt (v poli je index o 1 menší)
-                    selected_exercise = available_exercises[user_choice - 1]
-                    print(f"-> Vybráno: {selected_exercise.name}")
+                sets = int(input("Sets: "))
+                reps = int(input("Reps: "))
+                weight = float(input("Weight (kg): "))
+                if sets > 0 and reps > 0 and weight >= 0:
                     break
-                else:
-                    print(f"❌ Prosím zadejte číslo mezi 1 a {len(available_exercises)}.")
+                print("Values must be positive.")
             except ValueError:
-                print("❌ Zadejte platné číslo.")
+                print("Invalid input. Please enter numbers.")
 
-        # Nyní už známe skutečné ID cviku z objektu
-        real_exercise_id = selected_exercise.id
-
-        # 2. ZBYTEK JE STEJNÝ (Série, Opakování, Váha)
-        while True:
-            try:
-                sets = int(input("Počet sérií: "))
-                if sets > 0: break
-                print("Musí být alespoň 1.")
-            except ValueError:
-                print("❌ Číslo!")
-
-        while True:
-            try:
-                reps = int(input("Počet opakování: "))
-                break
-            except ValueError:
-                print("❌ Číslo!")
-
-        while True:
-            try:
-                weight = float(input("Váha (kg): ").replace(",", "."))
-                break
-            except ValueError:
-                print("❌ Číslo!")
+        # 4. Warm-up
+        warmup_input = input("Is this a warm-up set? (y/n) [n]: ").strip().lower()
+        is_warmup = warmup_input in ('y', 'yes', 'true', '1')
 
         return {
-            "exercise_id": real_exercise_id,  # Vracíme už správné DB ID
-            "sets": sets,
-            "reps": reps,
-            "weight_kg": weight
+            'exercise_id': exercise_id,
+            'sets': sets,
+            'reps': reps,
+            'weight_kg': weight,
+            'is_warmup': is_warmup
         }
 
     def ask_to_continue(self):
         """
-        Zjistí, zda chce uživatel přidat další cvik.
+        Asks the user if they want to add another exercise to the current workout.
+        :return: bool (True if yes, False if no).
         """
-        while True:
-            choice = input("\nChcete přidat další cvik? (a = ano / n = ne): ").lower().strip()
-            if choice in ['a', 'ano']:
-                return True
-            if choice in ['n', 'ne']:
-                return False
-            # Pokud zadal nesmysl, smyčka se opakuje
-
-    def show_success_message(self, message):
-        print(f"✅ {message}")
-
-    def show_error(self, message):
-        print(f"❌ {message}")
+        choice = input("\nAdd another exercise? (y/n): ").strip().lower()
+        return choice in ('y', 'yes', 'true')
 
     def show_history(self, history_data):
         """
-        Vypíše kompletní historii.
-        history_data je seznam n-tic: (WorkoutEntity, [seznam_položek])
+        Displays the complete workout history.
+
+        :param history_data: List of tuples [(WorkoutHeader, [Items...]), ...]
         """
-        print("\n=== HISTORIE TRÉNINKŮ ===")
+        print("\n" + "=" * 40)
+        print("WORKOUT HISTORY")
+        print("=" * 40)
 
         if not history_data:
-            print("Zatím jste nezaznamenali žádný trénink.")
+            print("No workouts recorded yet.")
             return
 
         for workout, items in history_data:
-            # Formátování data na hezčí string (např. 2023-10-05 18:30)
             date_str = workout.start_time.strftime("%Y-%m-%d %H:%M")
-
-            print(f"\n📅 {date_str} | ID: {workout.id}")
+            print(f"\nDate: {date_str}")
             if workout.note:
-                print(f"   Poznámka: {workout.note}")
-            print("   " + "-" * 30)
+                print(f"Note: {workout.note}")
+
+            print("-" * 40)
 
             if not items:
-                print("   (Žádné cviky v tomto tréninku)")
+                print("   (No exercises in this workout)")
             else:
                 for item in items:
-                    print(f"   • {item['exercise_name']}: {item['sets']}x{item['reps']} ({item['weight']} kg)")
+                    warmup_tag = " (Warm-up)" if item['is_warmup'] else ""
 
-            print("   " + "=" * 30)
+                    print(f"   • {item['exercise_name']}: "
+                          f"{item['sets']} x {item['reps']} @ {item['weight']} kg"
+                          f"{warmup_tag}")
+            print("-" * 40)

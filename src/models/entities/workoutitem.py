@@ -1,5 +1,5 @@
 class WorkoutItem:
-    def __init__(self, exercise_id, sets, reps, weight_kg, item_id=None, workout_id=None):
+    def __init__(self, exercise_id, sets, reps, weight_kg,is_warmup , item_id=None, workout_id=None):
         """
         Initializes the WorkoutItem and validates input data.
         :param exercise_id: ID of the exercise being performed.
@@ -11,6 +11,7 @@ class WorkoutItem:
         """
         self._id = item_id
         self._workout_id = workout_id
+        self._is_warmup = is_warmup
 
         self.set_exercise_id(exercise_id)
         self.set_sets(sets)
@@ -23,6 +24,10 @@ class WorkoutItem:
         :return: The database ID of the workout item.
         """
         return self._id
+
+    @property
+    def is_warmup(self):
+        return self._is_warmup
 
     @property
     def workout_id(self):

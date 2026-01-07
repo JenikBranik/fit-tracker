@@ -58,7 +58,8 @@ class WorkoutController:
                     exercise_id=item_data['exercise_id'],
                     sets=item_data['sets'],
                     reps=item_data['reps'],
-                    weight_kg=item_data['weight_kg']
+                    weight_kg=item_data['weight_kg'],
+                    is_warmup=item_data['is_warmup']
                 )
 
                 add_item_command = AddWorkoutItemCommand(self.repo, workout_id, item_entity)

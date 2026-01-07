@@ -8,7 +8,6 @@ class Invoker:
         :param command: string input
         :return: called function
         """
-        print(f"[INVOKER] Spouštím příkaz: {type(command).__name__}")
         result = command.execute()
 
         self._history.append(command)
