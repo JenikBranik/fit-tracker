@@ -1,12 +1,7 @@
 from src.models.entities.bodymeasurement import BodyMeasurement
 
-
 class MeasurementRepository:
     def __init__(self, db_connection):
-        """
-        Initializes the repository with a database connection.
-        :param db_connection: Instance of DbConnection.
-        """
         self.db = db_connection
 
     def create(self, measurement: BodyMeasurement):
@@ -36,7 +31,10 @@ class MeasurementRepository:
         conn = self.db.connect()
         cursor = conn.cursor()
 
-        query = "SELECT id, user_id, log_date, weight_kg FROM body_measurements WHERE user_id = %s ORDER BY log_date DESC"
+        query = ("SELECT id, user_id, log_date, weight_kg "
+                 "FROM body_measurements "
+                 "WHERE user_id = %s "
+                 "ORDER BY log_date DESC")
         cursor.execute(query, (user_id,))
         rows = cursor.fetchall()
         cursor.close()
@@ -51,3 +49,22 @@ class MeasurementRepository:
             )
             measurements.append(m)
         return measurements
+
+    def delete_by_date(self, user_id, date_str):
+        """
+        Delete weight
+        :param date_str: Date in formate 'YYYY-MM-DD'
+        """
+        conn = self.db.connect()
+        cursor = conn.cursor()
+
+        query = "DELETE FROM body_measurements WHERE user_id = %s AND log_date = %s"
+
+        try:
+            cursor.execute(query, (user_id, date_str))
+            conn.commit()
+            return cursor.rowcount > 0
+        except Exception as e:
+            raise f"Delete error: {e}"
+        finally:
+            cursor.close()

@@ -4,9 +4,8 @@ class MainView:
         """
         Prints the application startup banner.
         """
-        print("\n" + "="*30)
         print("FITTRACKER")
-        print("="*30)
+
 
     def show_status(self, user=None):
         """
@@ -23,10 +22,8 @@ class MainView:
         Renders the list of available menu options.
         :param menu_items: List of MenuItem objects.
         """
-        print("-" * 30)
         for item in menu_items:
             print(f" > {item.key}")
-        print("-" * 30)
 
     def get_user_choice(self):
         """
@@ -46,4 +43,3 @@ class MainView:
         Displays an error message and waits for user confirmation.
         """
         print(f"Error: {error}")
-        input("Press Enter to continue...")

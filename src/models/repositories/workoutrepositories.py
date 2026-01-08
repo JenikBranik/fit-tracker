@@ -4,16 +4,7 @@ from src.models.entities.workout import Workout
 
 
 class WorkoutRepository:
-    """
-    Repository class managing the persistence of Workout sessions.
-    It handles two database tables: 'workouts' and 'workout_items'.
-    """
-
     def __init__(self, db_connection):
-        """
-        Initializes the repository.
-        :param db_connection: Active database connection instance.
-        """
         if db_connection is None:
             raise ValueError("Database connection cannot be None")
         self.db = db_connection
@@ -85,7 +76,9 @@ class WorkoutRepository:
         conn = self.db.connect()
         cursor = conn.cursor()
 
-        sql = "SELECT exercise_id, sets, reps, weight_kg, is_warmup, id FROM workout_items WHERE workout_id = %s"
+        sql = ("SELECT exercise_id, sets, reps, weight_kg, is_warmup, id "
+               "FROM workout_items "
+               "WHERE workout_id = %s")
 
         try:
             cursor.execute(sql, (workout_id,))
@@ -119,7 +112,10 @@ class WorkoutRepository:
         conn = self.db.connect()
         cursor = conn.cursor()
 
-        query = "SELECT id, user_id, start_time, note FROM workouts WHERE user_id = %s ORDER BY start_time DESC"
+        query = ("SELECT id, user_id, start_time, note "
+                 "FROM workouts "
+                 "WHERE user_id = %s "
+                 "ORDER BY start_time DESC")
         cursor.execute(query, (user_id,))
         rows = cursor.fetchall()
         cursor.close()
