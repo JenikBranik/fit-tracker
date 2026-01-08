@@ -1,11 +1,13 @@
 create database fittracker;
 use fittracker;
 
+SET autocommit = 0;
+START TRANSACTION;
+
 create table users(
 id int primary key auto_increment,
 username varchar(50) not null,
 email varchar(100) not null unique,
-is_active boolean default true,
 created_at datetime default current_timestamp
 );
 
@@ -30,6 +32,7 @@ exercise_id int not null,
 sets int not null,
 reps int not null,
 weight_kg float not null,
+is_warmup boolean,
 foreign key(workout_id) references workouts(id),
 foreign key(exercise_id) references exercises(id)
 );
@@ -41,3 +44,27 @@ log_date date not null,
 weight_kg float not null,
 foreign key(user_id) references users(id)
 );
+
+CREATE VIEW user_summary AS
+SELECT u.id AS user_id, u.username,COUNT(DISTINCT w.id) AS total_workouts,(
+SELECT weight_kg FROM body_measurements bm 
+WHERE bm.user_id = u.id 
+ORDER BY log_date DESC
+LIMIT 1
+) AS current_weight_kg
+FROM users u
+LEFT JOIN workouts w ON u.id = w.user_id
+GROUP BY u.id, u.username;
+
+CREATE VIEW workout_details AS
+SELECT 
+    wi.workout_id,
+    e.name AS exercise_name,
+    wi.sets,
+    wi.reps,
+    wi.weight_kg,
+    wi.is_warmup
+FROM workout_items wi
+JOIN exercises e ON wi.exercise_id = e.id;
+
+COMMIT;
