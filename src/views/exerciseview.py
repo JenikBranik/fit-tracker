@@ -1,3 +1,7 @@
+import tkinter as tk
+from tkinter import filedialog
+import os
+
 class ExerciseView:
     def get_new_exercise_input(self):
         """
@@ -39,16 +43,55 @@ class ExerciseView:
         """
         Displays a list of exercises in a formatted table.
         If the list is empty, it shows a message to the user.
-
         :param exercises: List[Exercise] (A list of exercise objects to display)
         """
-        print("\nEXERCISE LIST")
+        print("\nExercises")
 
         if not exercises:
             print("No exercises found in the database.")
         else:
             print(f"{'NAME':} {'CATEGORY'}")
-            print("-" * 40)
+            print("\n")
 
             for ex in exercises:
                 print(f"{ex.name:} {ex.category}")
+
+    def show_success(self, message):
+        """
+        Success message.
+        """
+        print(f"{message}")
+
+    def show_error(self, message):
+        """
+        Error message.
+        """
+        print(f"Error: {message}")
+
+    def get_csv_file_path(self):
+        """
+        GUI CSV window.
+        """
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+
+        file_path = filedialog.askopenfilename(
+            title="Chose CSV file",
+            filetypes=[("CSV files", "*.csv")],
+            initialdir=os.getcwd()
+        )
+        root.destroy()
+        return file_path
+
+    def show_import_success(self):
+        print(f"Import done.")
+
+    def get_rename_input(self):
+        """
+        Rename exercises.
+        """
+        print("\nRename exercises")
+        old_name = input("Enter current exercise name: ").strip()
+        new_name = input("Enter new exercise name: ").strip()
+        return old_name, new_name

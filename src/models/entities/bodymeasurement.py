@@ -11,7 +11,6 @@ class BodyMeasurement:
         :param measurement_id: Database ID (optional, None for new records).
         """
         self._id = measurement_id
-        # Voláme settery pro okamžitou validaci při vytváření objektu
         self.set_user_id(user_id)
         self.set_log_date(log_date)
         self.set_weight_kg(weight_kg)

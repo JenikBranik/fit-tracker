@@ -1,6 +1,7 @@
 from src.database.connection import DbConnection
 from src.models.repositories.measurementrepository import MeasurementRepository
 from src.commands.logmeasurementcommand import LogMeasurementCommand
+from src.views.measurementview import MeasurementView  # <-- Nový import
 
 
 class MeasurementController:
@@ -15,43 +16,61 @@ class MeasurementController:
         self.db_conn = DbConnection.get_instance()
         self.repo = MeasurementRepository(self.db_conn)
 
+        self.view = MeasurementView()
+
     def add_measurement(self):
         """
-        weight input, validates it, and executes the LogMeasurementCommand.
-        Requires a valid active session.
+        Gets validated input from View and executes the LogMeasurementCommand.
         """
         if not self.session_manager.is_logged_in():
-            print("You need to login first.")
+            self.view.show_error("You need to login first.")
             return
 
         current_user = self.session_manager.get_current_user()
 
-        print("Measurement")
-        try:
-            weight_str = input("Entry weight: ").replace(",", ".")
-            weight = float(weight_str)
+        weight = self.view.get_weight_input()
 
+        try:
             command = LogMeasurementCommand(self.repo, current_user.id, weight)
             self.invoker.execute_command(command)
-            print("Saved.")
 
-        except ValueError:
-            print("Number!.")
+            self.view.show_success("Weight saved successfully.")
+
         except Exception as e:
-            print(f"Error: {e}")
+            self.view.show_error(str(e))
 
     def list_measurements(self):
         """
-        Fetches and displays the weight history
-        for the currently logged-in user.
+        Fetches data and sends it to the View for display.
         """
         if not self.session_manager.is_logged_in():
-            print("You need to login")
+            self.view.show_error("You need to login first.")
             return
 
         current_user = self.session_manager.get_current_user()
-        measurements = self.repo.get_by_user(current_user.id)
 
-        print(f"\nHistory: {current_user.username}")
-        for m in measurements:
-            print(f"{m.log_date}: {m.weight_kg} kg")
+        try:
+            measurements = self.repo.get_by_user(current_user.id)
+
+            self.view.show_history(current_user.username, measurements)
+
+        except Exception as e:
+            self.view.show_error(str(e))
+
+    def delete_measurement_action(self):
+        """
+        Delete measurement.
+        """
+        if not self.session_manager.is_logged_in():
+            self.view.show_error("Login required.")
+            return
+
+        user = self.session_manager.get_current_user()
+        self.list_measurements()
+        date_str = self.view.get_delete_date_input()
+        success = self.repo.delete_by_date(user.id, date_str)
+
+        if success:
+            self.view.show_success(f"Records for {date_str} deleted.")
+        else:
+            self.view.show_error(f"No records found for date {date_str}.")

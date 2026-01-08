@@ -17,4 +17,4 @@ class LoginUserCommand(ICommand):
             self.session.login(user)
             return user
         else:
-            raise ValueError("Uživatel s tímto emailem neexistuje.")
+            raise ValueError("User does not exist.")

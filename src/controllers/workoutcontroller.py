@@ -1,21 +1,18 @@
+import csv
+import os
 from datetime import datetime
 from src.database.connection import DbConnection
 from src.models.repositories.workoutrepositories import WorkoutRepository
 from src.models.repositories.exerciserepository import ExerciseRepository
 from src.models.entities.workoutitem import WorkoutItem
 from src.views.workoutview import WorkoutView
-
 from src.commands.workoutcommands import StartWorkoutCommand, AddWorkoutItemCommand
 
 
 class WorkoutController:
-
     def __init__(self, invoker, session_manager):
         """
         Initializes the controller with dependencies.
-        :param invoker: The command invoker for executing.
-        :param session_manager: The session manager to
-        ensure actions are performed for the correct user.
         """
         self.invoker = invoker
         self.session_manager = session_manager
@@ -28,9 +25,10 @@ class WorkoutController:
 
     def create_full_workout(self):
         """
+        Orchestrates the creation of a workout session.
         """
         if not self.session_manager.is_logged_in():
-            print("You need to login.")
+            self.view.show_error("You need to login first.")
             return
 
         user = self.session_manager.get_current_user()
@@ -40,15 +38,12 @@ class WorkoutController:
 
         try:
             start_command = StartWorkoutCommand(self.repo, user.id, note, start_time)
-
             workout_id = self.invoker.execute_command(start_command)
-
-            print(f"Created.")
 
             while True:
                 all_exercises = self.ex_repo.get_all()
                 if not all_exercises:
-                    print("Nothing.")
+                    self.view.show_no_exercises_warning()
                     break
 
                 item_data = self.view.get_workout_item_input(all_exercises)
@@ -65,21 +60,18 @@ class WorkoutController:
                 add_item_command = AddWorkoutItemCommand(self.repo, workout_id, item_entity)
                 self.invoker.execute_command(add_item_command)
 
-                print("Saved.")
-
                 if not self.view.ask_to_continue():
                     break
 
         except Exception as e:
-            print(f"Error: {e}")
+            self.view.show_error(str(e))
 
     def show_workout_history(self):
         """
-        Retrieves and displays the complete
-        workout history for the logged-in user.
+        Retrieves and displays the complete workout history.
         """
         if not self.session_manager.is_logged_in():
-            print("Login.")
+            self.view.show_error("You need to login first.")
             return
 
         user = self.session_manager.get_current_user()
@@ -95,4 +87,76 @@ class WorkoutController:
             self.view.show_history(full_history)
 
         except Exception as e:
-            print(f"Error: {e}")
+            self.view.show_error(str(e))
+
+    def import_workouts_from_csv(self):
+        """
+        Reads CSV file selected by user and imports data.
+        """
+        if not self.session_manager.is_logged_in():
+            self.view.show_error("You need to login first.")
+            return
+
+        user = self.session_manager.get_current_user()
+
+        file_path = self.view.get_csv_file_path()
+
+        if not file_path:
+            return
+
+        if not os.path.exists(file_path):
+            self.view.show_error(f"File '{file_path}' not found.")
+            return
+
+        created_workouts_map = {}
+        items_count = 0
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+
+                for row in reader:
+                    s_time_str = row['start_time'].strip()
+                    note = row['note'].strip()
+
+                    try:
+                        s_time = datetime.strptime(s_time_str, "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        s_time = datetime.strptime(s_time_str, "%Y-%m-%d %H:%M")
+
+                    workout_key = (s_time_str, note)
+
+                    if workout_key not in created_workouts_map:
+                        start_cmd = StartWorkoutCommand(self.repo, user.id, note, s_time)
+                        new_workout_id = self.invoker.execute_command(start_cmd)
+                        created_workouts_map[workout_key] = new_workout_id
+
+                    current_workout_id = created_workouts_map[workout_key]
+
+                    ex_name = row['exercise_name'].strip()
+                    ex_id = self.ex_repo.get_id_by_name(ex_name)
+
+                    if not ex_id:
+                        self.view.show_import_warning(f"Exercise '{ex_name}' not found, skipping row.")
+                        continue
+
+                    is_warmup_val = row['is_warmup'].strip()
+                    is_warmup_bool = is_warmup_val.lower() in ('1', 'true', 'ano', 'y')
+
+                    item_entity = WorkoutItem(
+                        workout_id=current_workout_id,
+                        exercise_id=ex_id,
+                        sets=int(row['sets']),
+                        reps=int(row['reps']),
+                        weight_kg=float(row['weight_kg']),
+                        is_warmup=is_warmup_bool
+                    )
+
+                    add_cmd = AddWorkoutItemCommand(self.repo, current_workout_id, item_entity)
+                    self.invoker.execute_command(add_cmd)
+                    items_count += 1
+
+            self.view.show_import_success()
+
+        except Exception as e:
+            self.view.show_error(str(e))

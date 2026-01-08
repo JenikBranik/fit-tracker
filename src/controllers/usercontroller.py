@@ -8,9 +8,7 @@ from src.commands.registerusercommand import RegisterUserCommand
 class UserController:
     def __init__(self, invoker, session_manager):
         """
-        Initializes the controller with the necessary infrastructure for command execution and state management.
-        :param invoker: The command invoker used to execute registration and login commands.
-        :param session_manager: The session manager to handle user state (logged in/out).
+        Initializes the controller with the necessary infrastructure.
         """
         self.invoker = invoker
         self.session_manager = session_manager
@@ -21,6 +19,7 @@ class UserController:
 
     def register_user(self):
         """
+        Orchestrates user registration and auto-login.
         """
         data = self.view.get_new_user_input()
 
@@ -30,32 +29,27 @@ class UserController:
                 username=data['username'],
                 email=data['email']
             )
-
             self.invoker.execute_command(command)
-            self.view.show_success()
+
+            self.view.show_registration_success()
+
             new_user = self.repo.get_by_email(data['email'])
 
             if new_user:
                 self.session_manager.login(new_user)
-                print(f"Logged in: {new_user.username}")
+                self.view.show_login_success(new_user.username)
             else:
-                print("Error")
-
-        except ValueError as e:
-            self.view.show_error(f"Error: {e}")
-
-        except RuntimeError as e:
-            self.view.show_error(f"Error: {e}")
+                self.view.show_error("Auto-login failed. Please try logging in manually.")
 
         except Exception as e:
-            self.view.show_error(f"Error: {e}")
+            self.view.show_error(str(e))
 
     def login_user(self):
         """
-        executes the LoginUserCommand which validates credentials
-        and updates the SessionManager.
+        Executes the LoginUserCommand which validates credentials.
         """
         email = self.view.get_login_input()
+
         try:
             command = LoginUserCommand(
                 repository=self.repo,
@@ -63,8 +57,8 @@ class UserController:
                 email=email
             )
             logged_user = self.invoker.execute_command(command)
-            print(f"Logged in: {logged_user.username}")
-        except ValueError as e:
-            self.view.show_error(str(e))
+
+            self.view.show_login_success(logged_user.username)
+
         except Exception as e:
-            self.view.show_error(f"Error: {e}")
+            self.view.show_error(str(e))
