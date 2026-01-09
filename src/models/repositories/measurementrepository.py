@@ -1,4 +1,5 @@
 from src.models.entities.bodymeasurement import BodyMeasurement
+from mysql.connector import Error
 
 class MeasurementRepository:
     def __init__(self, db_connection):
@@ -13,14 +14,17 @@ class MeasurementRepository:
         """
         conn = self.db.connect()
         cursor = conn.cursor()
-
         query = "INSERT INTO body_measurements (user_id, log_date, weight_kg) VALUES (%s, %s, %s)"
-        cursor.execute(query, (measurement.user_id, measurement.log_date, measurement.weight_kg))
-        conn.commit()
-
-        new_id = cursor.lastrowid
-        cursor.close()
-        return new_id
+        try:
+            cursor.execute(query, (measurement.user_id, measurement.log_date, measurement.weight_kg))
+            conn.commit()
+            new_id = cursor.lastrowid
+            return new_id
+        except Error as e:
+            conn.rollback()
+            raise RuntimeError(f"Database error during measurement create: {e}")
+        finally:
+            cursor.close()
 
     def get_by_user(self, user_id):
         """
@@ -65,6 +69,7 @@ class MeasurementRepository:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
+            conn.rollback()
             raise f"Delete error: {e}"
         finally:
             cursor.close()
