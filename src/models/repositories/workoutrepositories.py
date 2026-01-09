@@ -166,31 +166,26 @@ class WorkoutRepository:
         (tabulka 'workout_items') jako jednu atomickou operaci.
         """
         conn = self.db.connect()
-        # 1. Vypneme automatické ukládání, abychom měli kontrolu nad transakcí
         conn.autocommit = False
         cursor = conn.cursor()
 
         try:
-            # A) Vložení hlavičky tréninku (tabulka WORKOUTS)
             sql_header = "INSERT INTO workouts (user_id, start_time, note) VALUES (%s, %s, %s)"
             cursor.execute(sql_header, (user_id, start_time, note))
 
-            # Získáme ID nově vytvořeného tréninku
             new_workout_id = cursor.lastrowid
 
-            # B) Vložení všech cviků (tabulka WORKOUT_ITEMS)
             sql_item = """
                        INSERT INTO workout_items (workout_id, exercise_id, sets, reps, weight_kg, is_warmup)
                        VALUES (%s, %s, %s, %s, %s, %s) \
                        """
 
             for item in items:
-                # Validace typu
                 if not isinstance(item, WorkoutItem):
                     raise TypeError("Item must be of type WorkoutItem")
 
                 vals = (
-                    new_workout_id,  # Použijeme ID z kroku A
+                    new_workout_id,
                     item.exercise_id,
                     item.sets,
                     item.reps,
@@ -199,16 +194,13 @@ class WorkoutRepository:
                 )
                 cursor.execute(sql_item, vals)
 
-            # C) Pokud vše prošlo bez chyby, potvrdíme změny do DB
             conn.commit()
             return new_workout_id
 
         except Error as e:
-            # D) Pokud nastala chyba, vrátíme vše zpět (ROLLBACK)
             conn.rollback()
             raise RuntimeError(f"Transaction failed (Full Workout Save): {e}")
 
         finally:
             cursor.close()
-            # Vrátíme autocommit do původního stavu pro zbytek aplikace
             conn.autocommit = True
