@@ -158,3 +158,49 @@ class WorkoutRepository:
                 "is_warmup": bool(row[4])
             })
         return results
+
+    def save_complete_workout(self, user_id, start_time, note, items):
+        """
+        TRANSAKČNÍ METODA (Splňuje zadání):
+        Uloží hlavičku tréninku (tabulka 'workouts') a všechny jeho položky
+        (tabulka 'workout_items') jako jednu atomickou operaci.
+        """
+        conn = self.db.connect()
+        conn.autocommit = False
+        cursor = conn.cursor()
+
+        try:
+            sql_header = "INSERT INTO workouts (user_id, start_time, note) VALUES (%s, %s, %s)"
+            cursor.execute(sql_header, (user_id, start_time, note))
+
+            new_workout_id = cursor.lastrowid
+
+            sql_item = """
+                       INSERT INTO workout_items (workout_id, exercise_id, sets, reps, weight_kg, is_warmup)
+                       VALUES (%s, %s, %s, %s, %s, %s) \
+                       """
+
+            for item in items:
+                if not isinstance(item, WorkoutItem):
+                    raise TypeError("Item must be of type WorkoutItem")
+
+                vals = (
+                    new_workout_id,
+                    item.exercise_id,
+                    item.sets,
+                    item.reps,
+                    item.weight_kg,
+                    item.is_warmup
+                )
+                cursor.execute(sql_item, vals)
+
+            conn.commit()
+            return new_workout_id
+
+        except Error as e:
+            conn.rollback()
+            raise RuntimeError(f"Transaction failed (Full Workout Save): {e}")
+
+        finally:
+            cursor.close()
+            conn.autocommit = True

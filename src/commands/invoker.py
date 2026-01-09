@@ -1,6 +1,6 @@
 class Invoker:
     def __init__(self):
-        self._history = []
+        pass
 
     def execute_command(self, command):
         """
@@ -9,6 +9,4 @@ class Invoker:
         :return: called function
         """
         result = command.execute()
-
-        self._history.append(command)
         return result
