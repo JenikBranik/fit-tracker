@@ -91,6 +91,11 @@ class WorkoutView:
                           f"{item['sets']} x {item['reps']} @ {item['weight']} kg"
                           f"{warmup_tag}")
 
+    def show_message(self, message):
+        """
+        Displays a generic success or info message.
+        """
+        print(f"\n{message}")
 
     def show_no_exercises_warning(self):
         print("No exercises found in database. Please add exercises first.")

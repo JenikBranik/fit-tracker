@@ -27,6 +27,7 @@ class UserRepository:
             conn.commit()
             return cursor.lastrowid
         except Error as e:
+            conn.rollback()
             raise RuntimeError(f"Error: {e}")
         finally:
             cursor.close()

@@ -1,4 +1,5 @@
 from src.models.entities.exercise import Exercise
+from mysql.connector import Error
 
 
 class ExerciseRepository:
@@ -20,11 +21,7 @@ class ExerciseRepository:
 
         results = []
         for row in rows:
-            exercise_obj = Exercise(
-                name=row[1],
-                category=row[2],
-                exercise_id=row[0]
-            )
+            exercise_obj = Exercise(name=row[1],category=row[2],exercise_id=row[0])
 
             results.append(exercise_obj)
 
@@ -33,14 +30,17 @@ class ExerciseRepository:
     def create(self, exercise: Exercise):
         conn = self.db.connect()
         cursor = conn.cursor()
-
-        query = "INSERT INTO exercises (name, category) VALUES (%s, %s)"
-        cursor.execute(query, (exercise.name, exercise.category))
-        conn.commit()
-
-        new_id = cursor.lastrowid
-        cursor.close()
-        return new_id
+        try:
+            query = "INSERT INTO exercises (name, category) VALUES (%s, %s)"
+            cursor.execute(query, (exercise.name, exercise.category))
+            conn.commit()
+            new_id = cursor.lastrowid
+            return new_id
+        except Error as e:
+            conn.rollback()
+            raise RuntimeError(f"Database error during create exercise: {e}")
+        finally:
+            cursor.close()
 
     def get_id_by_name(self, name):
         """
@@ -73,6 +73,7 @@ class ExerciseRepository:
             conn.commit()
             return cursor.rowcount > 0
         except Exception as e:
+            conn.rollback()
             raise f"Update error: {e}"
         finally:
             cursor.close()

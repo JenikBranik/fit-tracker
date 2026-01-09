@@ -6,7 +6,7 @@ from src.models.repositories.workoutrepositories import WorkoutRepository
 from src.models.repositories.exerciserepository import ExerciseRepository
 from src.models.entities.workoutitem import WorkoutItem
 from src.views.workoutview import WorkoutView
-from src.commands.workoutcommands import StartWorkoutCommand, AddWorkoutItemCommand
+from src.commands.workoutcommands import StartWorkoutCommand, AddWorkoutItemCommand, SaveCompleteWorkoutCommand
 
 
 class WorkoutController:
@@ -25,7 +25,8 @@ class WorkoutController:
 
     def create_full_workout(self):
         """
-        Orchestrates the creation of a workout session.
+        Orchestrates the creation of a workout session using a TRANSACTION.
+        Data is collected in memory and saved atomically at the end.
         """
         if not self.session_manager.is_logged_in():
             self.view.show_error("You need to login first.")
@@ -36,10 +37,9 @@ class WorkoutController:
         note = self.view.get_workout_header_input()
         start_time = datetime.now()
 
-        try:
-            start_command = StartWorkoutCommand(self.repo, user.id, note, start_time)
-            workout_id = self.invoker.execute_command(start_command)
+        items_buffer = []
 
+        try:
             while True:
                 all_exercises = self.ex_repo.get_all()
                 if not all_exercises:
@@ -49,7 +49,7 @@ class WorkoutController:
                 item_data = self.view.get_workout_item_input(all_exercises)
 
                 item_entity = WorkoutItem(
-                    workout_id=workout_id,
+                    workout_id=None,
                     exercise_id=item_data['exercise_id'],
                     sets=item_data['sets'],
                     reps=item_data['reps'],
@@ -57,14 +57,28 @@ class WorkoutController:
                     is_warmup=item_data['is_warmup']
                 )
 
-                add_item_command = AddWorkoutItemCommand(self.repo, workout_id, item_entity)
-                self.invoker.execute_command(add_item_command)
-
+                items_buffer.append(item_entity)
                 if not self.view.ask_to_continue():
                     break
 
+            if items_buffer:
+
+                transaction_command = SaveCompleteWorkoutCommand(
+                    repository=self.repo,
+                    user_id=user.id,
+                    start_time=start_time,
+                    note=note,
+                    items=items_buffer
+                )
+
+                self.invoker.execute_command(transaction_command)
+
+                self.view.show_message("Workout saved.")
+            else:
+                self.view.show_error("Workout contains no exercises, save cancelled.")
+
         except Exception as e:
-            self.view.show_error(str(e))
+            self.view.show_error(f"Error saving workout: {str(e)}")
 
     def show_workout_history(self):
         """
@@ -109,7 +123,6 @@ class WorkoutController:
             return
 
         created_workouts_map = {}
-        items_count = 0
 
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
@@ -154,7 +167,6 @@ class WorkoutController:
 
                     add_cmd = AddWorkoutItemCommand(self.repo, current_workout_id, item_entity)
                     self.invoker.execute_command(add_cmd)
-                    items_count += 1
 
             self.view.show_import_success()
 
