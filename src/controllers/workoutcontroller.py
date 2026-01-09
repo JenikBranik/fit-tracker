@@ -58,9 +58,10 @@ class WorkoutController:
                 )
 
                 items_buffer.append(item_entity)
-
                 if not self.view.ask_to_continue():
                     break
+
+            if items_buffer:
 
                 transaction_command = SaveCompleteWorkoutCommand(
                     repository=self.repo,
@@ -71,6 +72,10 @@ class WorkoutController:
                 )
 
                 self.invoker.execute_command(transaction_command)
+
+                self.view.show_message("Workout saved.")
+            else:
+                self.view.show_error("Workout contains no exercises, save cancelled.")
 
         except Exception as e:
             self.view.show_error(f"Error saving workout: {str(e)}")
