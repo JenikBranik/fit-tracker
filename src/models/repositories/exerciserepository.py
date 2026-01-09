@@ -34,15 +34,13 @@ class ExerciseRepository:
             query = "INSERT INTO exercises (name, category) VALUES (%s, %s)"
             cursor.execute(query, (exercise.name, exercise.category))
             conn.commit()
+            new_id = cursor.lastrowid
+            return new_id
         except Error as e:
             conn.rollback()
             raise RuntimeError(f"Database error during create exercise: {e}")
         finally:
             cursor.close()
-
-        new_id = cursor.lastrowid
-        cursor.close()
-        return new_id
 
     def get_id_by_name(self, name):
         """

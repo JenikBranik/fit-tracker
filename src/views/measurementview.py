@@ -42,7 +42,7 @@ class MeasurementView:
         Ask user to delete date.
         """
         print("\nDelete measurement")
-        print("Format: YYYY-MM-DD (for example. 2023-12-01)")
+        print("Format: YYYY-MM-DD (for example. 2023-01-15)")
         while True:
             val = input("Enter date to delete: ").strip()
             if len(val) == 10 and val[4] == '-' and val[7] == '-':

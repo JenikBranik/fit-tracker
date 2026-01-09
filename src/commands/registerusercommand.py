@@ -6,7 +6,6 @@ class RegisterUserCommand(ICommand):
         self.repo = repository
         self.username = username
         self.email = email
-        self._result_user_id = None
 
     def execute(self):
         """
@@ -14,9 +13,4 @@ class RegisterUserCommand(ICommand):
         :return: int (ID of the newly created user)
         """
         new_user_entity = User(self.username,self.email)
-
-        self._result_user_id = self.repo.create(new_user_entity)
-        return self._result_user_id
-
-    def get_result(self):
-        return self._result_user_id
+        return self.repo.create(new_user_entity)
