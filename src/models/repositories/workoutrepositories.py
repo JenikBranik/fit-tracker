@@ -29,6 +29,7 @@ class WorkoutRepository:
             new_id = cursor.lastrowid
             return new_id
         except Error as e:
+            conn.rollback()
             raise RuntimeError(f"Database error when creating workout header: {e}")
         finally:
             cursor.close()
@@ -62,6 +63,7 @@ class WorkoutRepository:
             cursor.execute(sql, vals)
             conn.commit()
         except Error as e:
+            conn.rollback()
             raise RuntimeError(f"Database error when inserting item: {e}")
         finally:
             cursor.close()
